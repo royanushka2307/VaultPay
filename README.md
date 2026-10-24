@@ -436,3 +436,13 @@ If you discover any security vulnerability or potential architectural flaw in Va
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+## Contributors
+
+This project was collaboratively developed by:
+
+
+Khushidx (https://github.com/Khushidx)
+
+
+Anushka Roy (https://github.com/royanushka2307)
