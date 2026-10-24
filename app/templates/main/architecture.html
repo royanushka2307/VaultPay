@@ -1,0 +1,341 @@
+{% extends "base.html" %}
+
+{% block title %}Architecture - VaultPay{% endblock %}
+
+{% block content %}
+<div style="max-width: 1050px; margin: 0 auto; padding-bottom: 3.5rem;">
+
+    <!-- Header -->
+    <div style="border-bottom: 1px solid var(--border-subtle); padding-bottom: 1.25rem; margin-bottom: 1.75rem;">
+        <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.4rem;">
+            <h1 style="font-size: 1.7rem; font-weight: 700; color: var(--text-primary); margin: 0; letter-spacing: -0.02em;">
+                CRYPTOGRAPHIC ARCHITECTURE - SYSTEM ARCHITECTURE
+            </h1>
+            <span style="background: var(--info-bg); color: var(--info-text); border: 1px solid var(--info-border); font-size: 0.7rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 4px; letter-spacing: 0.04em;">
+                OPERATIONAL FLOWCHARTS · AUTHENTICATED ACCESS ONLY
+            </span>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 0.88rem; margin: 0;">
+            Security pipelines - each flowchart node shows the exact code file and function where that step executes.
+        </p>
+    </div>
+
+    <!-- Nav pills -->
+    <div style="display: flex; gap: 0.5rem; margin-bottom: 2rem; flex-wrap: wrap;">
+        <a href="#flow-aes-gcm" class="btn btn-secondary" style="font-size: 0.78rem; padding: 0.35rem 0.75rem; text-decoration: none;">💳 Pipeline 1 · AES-256-GCM Vault</a>
+        <a href="#flow-sha256" class="btn btn-secondary" style="font-size: 0.78rem; padding: 0.35rem 0.75rem; text-decoration: none;">👤 Pipeline 2 · Identity & Auth</a>
+<a href="#db-guide" class="btn btn-secondary" style="font-size: 0.78rem; padding: 0.35rem 0.75rem; text-decoration: none; border-color: var(--brand-primary); color: var(--brand-primary);">🗄️ DB Inspection</a>
+    </div>
+
+    <!-- Pillar cards -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 2.5rem;">
+        <div class="card" style="border-top: 3px solid var(--success); padding: 1rem 1.15rem;">
+            <div style="font-size: 1rem; margin-bottom: 0.3rem;">💳 <strong>Sensitive Vault (AEAD)</strong></div>
+            <div style="color: var(--text-secondary); font-size: 0.82rem; line-height: 1.5;">AES-256-GCM (AEAD) - fresh 12-byte nonce, 16-byte GMAC tag, PIN bound via AAD.</div>
+            <div style="margin-top: 0.6rem; font-family: var(--font-mono); font-size: 0.73rem; color: var(--success-text);">app/utils/crypto_aes_gcm.py</div>
+        </div>
+        <div class="card" style="border-top: 3px solid var(--brand-primary); padding: 1rem 1.15rem;">
+            <div style="font-size: 1rem; margin-bottom: 0.3rem;">👤 <strong>User Identity</strong></div>
+            <div style="color: var(--text-secondary); font-size: 0.82rem; line-height: 1.5;">Salted SHA-256 with 256-bit CSPRNG salt + constant-time HMAC verification.</div>
+            <div style="margin-top: 0.6rem; font-family: var(--font-mono); font-size: 0.73rem; color: var(--brand-primary);">app/utils/password_sha256.py</div>
+        </div>
+        <div class="card" style="border-top: 3px solid #D97706; padding: 1rem 1.15rem;">
+            <div style="font-size: 1rem; margin-bottom: 0.3rem;">⚖️ <strong>Financial Ledger & Arithmetic</strong></div>
+            <div style="color: var(--text-secondary); font-size: 0.82rem; line-height: 1.5;">64-bit integer paise (no floats) + atomic double-entry commit / rollback.</div>
+            <div style="margin-top: 0.6rem; font-family: var(--font-mono); font-size: 0.73rem; color: #B45309;">app/utils/money_integer_cents.py</div>
+        </div>
+    </div>
+
+
+    <!-- PIPELINE 1: AES-256-GCM                                          -->
+    <div id="flow-aes-gcm" class="card" style="margin-bottom: 2.5rem; padding: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.75rem; margin-bottom: 1.25rem;">
+            <div>
+                <span style="font-size: 0.7rem; font-weight: 700; color: var(--success); text-transform: uppercase; letter-spacing: 0.05em;">Pipeline 1</span>
+                <h2 style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin: 0.1rem 0 0;">AES-256-GCM AEAD - Encrypt & Decrypt</h2>
+            </div>
+            <code style="font-size: 0.73rem; background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); padding: 0.2rem 0.55rem; border-radius: 4px;">payment_methods.encrypted_metadata</code>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.5; margin-bottom: 1.25rem;">
+            Encrypts card metadata at rest. A 1-bit change to the stored payload triggers an immediate <code>InvalidTag</code> abort - data cannot be silently corrupted.
+        </p>
+
+        <!-- Flowchart -->
+        <div style="background: var(--bg-surface-2); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 1.5rem 1rem; overflow-x: auto; margin-bottom: 0;">
+            <div style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.4rem;">
+                <span style="width: 7px; height: 7px; border-radius: 50%; background: var(--success); display: inline-block;"></span>
+                Encryption → Storage → Decryption
+            </div>
+
+            <div style="display: flex; align-items: flex-start; min-width: 920px; gap: 0; justify-content: space-between;">
+
+                <!-- Node 1 -->
+                <div style="display: flex; flex-direction: column; align-items: center; width: 130px; gap: 0.3rem;">
+                    <div style="background: #A7F3D0; border: 2px solid #059669; color: #064E3B; font-weight: 700; font-size: 0.76rem; text-align: center; padding: 0.7rem 0.4rem; border-radius: 22px; width: 100%;">
+                        Plaintext<br>Metadata
+                    </div>
+                    <span style="font-family: var(--font-mono); font-size: 0.63rem; color: var(--success-text); text-align: center; background: var(--success-bg); padding: 0.1rem 0.35rem; border-radius: 3px;">payment_method.py · set_metadata()</span>
+                </div>
+
+                <div style="color: var(--text-dim); font-size: 1.1rem; font-weight: bold; align-self: center; margin: 0 0.2rem;">➔</div>
+
+                <!-- Node 2 -->
+                <div style="display: flex; flex-direction: column; align-items: center; width: 130px; gap: 0.3rem;">
+                    <div style="background: var(--bg-surface-3); border: 2px solid var(--warning); color: var(--warning-text); font-weight: 600; font-size: 0.73rem; text-align: center; padding: 0.7rem 0.4rem; transform: skew(-7deg); width: 100%;">
+                        <div style="transform: skew(7deg);">os.urandom(12)<br>+ 256-bit Key + PIN</div>
+                    </div>
+                    <span style="font-family: var(--font-mono); font-size: 0.63rem; color: var(--warning-text); text-align: center; background: var(--warning-bg); padding: 0.1rem 0.35rem; border-radius: 3px;">crypto_aes_gcm.py · L69, L179</span>
+                </div>
+
+                <div style="color: var(--text-dim); font-size: 1.1rem; font-weight: bold; align-self: center; margin: 0 0.2rem;">➔</div>
+
+                <!-- Node 3 -->
+                <div style="display: flex; flex-direction: column; align-items: center; width: 130px; gap: 0.3rem;">
+                    <div style="background: var(--bg-surface-3); border: 2px solid var(--warning); color: var(--warning-text); font-weight: 600; font-size: 0.73rem; text-align: center; padding: 0.7rem 0.4rem; border-radius: 6px; width: 100%;">
+                        AESGCM.encrypt()<br>CTR + GHASH Tag
+                    </div>
+                    <span style="font-family: var(--font-mono); font-size: 0.63rem; color: var(--warning-text); text-align: center; background: var(--warning-bg); padding: 0.1rem 0.35rem; border-radius: 3px;">crypto_aes_gcm.py · L185</span>
+                </div>
+
+                <div style="color: var(--text-dim); font-size: 1.1rem; font-weight: bold; align-self: center; margin: 0 0.2rem;">➔</div>
+
+                <!-- Node 4 -->
+                <div style="display: flex; flex-direction: column; align-items: center; width: 135px; gap: 0.3rem;">
+                    <div style="background: var(--bg-surface-3); border: 2px solid var(--warning); color: var(--warning-text); font-weight: 600; font-size: 0.71rem; text-align: center; padding: 0.7rem 0.3rem; transform: skew(-7deg); width: 100%;">
+                        <div style="transform: skew(7deg);">Base64(nonce|CT|tag)<br>→ SQLite TEXT</div>
+                    </div>
+                    <span style="font-family: var(--font-mono); font-size: 0.63rem; color: var(--text-muted); text-align: center; padding: 0.1rem 0.35rem; border-radius: 3px;">crypto_aes_gcm.py · L188–190</span>
+                </div>
+
+                <div style="color: var(--text-dim); font-size: 1.1rem; font-weight: bold; align-self: center; margin: 0 0.2rem;">➔</div>
+
+                <!-- Node 5 -->
+                <div style="display: flex; flex-direction: column; align-items: center; width: 125px; gap: 0.3rem;">
+                    <div style="background: var(--bg-surface-3); border: 2px solid var(--warning); color: var(--warning-text); font-weight: 600; font-size: 0.73rem; text-align: center; padding: 0.7rem 0.4rem; border-radius: 6px; width: 100%;">
+                        AESGCM.decrypt()<br>+ verify tag
+                    </div>
+                    <span style="font-family: var(--font-mono); font-size: 0.63rem; color: var(--warning-text); text-align: center; background: var(--warning-bg); padding: 0.1rem 0.35rem; border-radius: 3px;">crypto_aes_gcm.py · L254</span>
+                </div>
+
+                <div style="color: var(--text-dim); font-size: 1.1rem; font-weight: bold; align-self: center; margin: 0 0.2rem;">➔</div>
+
+                <!-- Node 6: Decision -->
+                <div style="display: flex; align-items: center; gap: 0.6rem; align-self: center;">
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 0.3rem;">
+                        <div style="background: var(--bg-surface-3); border: 2px solid var(--accent); color: var(--accent); font-weight: 700; font-size: 0.72rem; width: 80px; height: 80px; transform: rotate(45deg); display: flex; align-items: center; justify-content: center;">
+                            <div style="transform: rotate(-45deg); text-align: center; line-height: 1.2;">GMAC<br>valid?</div>
+                        </div>
+                        <span style="font-family: var(--font-mono); font-size: 0.63rem; color: var(--text-muted); margin-top: 0.2rem;">crypto_aes_gcm.py · L257</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+                        <div style="display: flex; align-items: center; gap: 0.4rem;">
+                            <span style="font-size: 0.68rem; font-weight: 700; color: #059669; font-family: var(--font-mono);">YES ➔</span>
+                            <div style="background: #A7F3D0; border: 2px solid #059669; color: #064E3B; font-weight: 700; font-size: 0.69rem; padding: 0.3rem 0.55rem; border-radius: 18px; white-space: nowrap;">Plaintext returned</div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.4rem;">
+                            <span style="font-size: 0.68rem; font-weight: 700; color: #DC2626; font-family: var(--font-mono);">NO ──➔</span>
+                            <div style="background: #FECACA; border: 2px solid #DC2626; color: #991B1B; font-weight: 700; font-size: 0.69rem; padding: 0.3rem 0.55rem; border-radius: 18px; white-space: nowrap;">TamperedDataError</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+
+    <!-- PIPELINE 2: IDENTITY / SHA-256                                   -->
+    <div id="flow-sha256" class="card" style="margin-bottom: 2.5rem; padding: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.75rem; margin-bottom: 1.25rem;">
+            <div>
+                <span style="font-size: 0.7rem; font-weight: 700; color: var(--brand-primary); text-transform: uppercase; letter-spacing: 0.05em;">Pipeline 2</span>
+                <h2 style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin: 0.1rem 0 0;">User Identity & Password Storage</h2>
+            </div>
+            <code style="font-size: 0.73rem; background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); padding: 0.2rem 0.55rem; border-radius: 4px;">users.password_hash / password_salt</code>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.5; margin-bottom: 1.25rem;">
+            Each account gets a unique 256-bit CSPRNG salt. Verification uses <code>hmac.compare_digest</code> - constant-time, immune to timing attacks.
+        </p>
+
+        <!-- Flowchart -->
+        <div style="background: var(--bg-surface-2); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 1.5rem 1rem; overflow-x: auto;">
+            <div style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.4rem;">
+                <span style="width: 7px; height: 7px; border-radius: 50%; background: var(--brand-primary); display: inline-block;"></span>
+                Register → Hash → Store → Verify
+            </div>
+
+            <div style="display: flex; align-items: flex-start; min-width: 860px; gap: 0; justify-content: space-between;">
+
+                <!-- Node 1 -->
+                <div style="display: flex; flex-direction: column; align-items: center; width: 120px; gap: 0.3rem;">
+                    <div style="background: var(--bg-surface-3); border: 2px solid var(--info); color: var(--info-text); font-weight: 700; font-size: 0.75rem; text-align: center; padding: 0.7rem 0.4rem; border-radius: 22px; width: 100%;">
+                        Plaintext<br>Password
+                    </div>
+                    <span style="font-family: var(--font-mono); font-size: 0.63rem; color: var(--text-muted); text-align: center; padding: 0.1rem 0.3rem; border-radius: 3px;">Registration form</span>
+                </div>
+
+                <div style="color: var(--text-dim); font-size: 1.1rem; font-weight: bold; align-self: center; margin: 0 0.2rem;">➔</div>
+
+                <!-- Node 2 -->
+                <div style="display: flex; flex-direction: column; align-items: center; width: 130px; gap: 0.3rem;">
+                    <div style="background: var(--bg-surface-3); border: 2px solid var(--warning); color: var(--warning-text); font-weight: 600; font-size: 0.73rem; text-align: center; padding: 0.7rem 0.4rem; transform: skew(-7deg); width: 100%;">
+                        <div style="transform: skew(7deg);">secrets.token_hex(32)<br>→ 256-bit salt</div>
+                    </div>
+                    <span style="font-family: var(--font-mono); font-size: 0.63rem; color: var(--warning-text); text-align: center; background: var(--warning-bg); padding: 0.1rem 0.35rem; border-radius: 3px;">password_sha256.py · L24</span>
+                </div>
+
+                <div style="color: var(--text-dim); font-size: 1.1rem; font-weight: bold; align-self: center; margin: 0 0.2rem;">➔</div>
+
+                <!-- Node 3 -->
+                <div style="display: flex; flex-direction: column; align-items: center; width: 130px; gap: 0.3rem;">
+                    <div style="background: var(--bg-surface-3); border: 2px solid var(--warning); color: var(--warning-text); font-weight: 600; font-size: 0.73rem; text-align: center; padding: 0.7rem 0.4rem; border-radius: 6px; width: 100%;">
+                        SHA-256<br>(salt ‖ password)
+                    </div>
+                    <span style="font-family: var(--font-mono); font-size: 0.63rem; color: var(--warning-text); text-align: center; background: var(--warning-bg); padding: 0.1rem 0.35rem; border-radius: 3px;">password_sha256.py · L40</span>
+                </div>
+
+                <div style="color: var(--text-dim); font-size: 1.1rem; font-weight: bold; align-self: center; margin: 0 0.2rem;">➔</div>
+
+                <!-- Node 4 -->
+                <div style="display: flex; flex-direction: column; align-items: center; width: 130px; gap: 0.3rem;">
+                    <div style="background: var(--bg-surface-3); border: 2px solid var(--warning); color: var(--warning-text); font-weight: 600; font-size: 0.71rem; text-align: center; padding: 0.7rem 0.3rem; transform: skew(-7deg); width: 100%;">
+                        <div style="transform: skew(7deg);">Store hash + salt<br>→ users table</div>
+                    </div>
+                    <span style="font-family: var(--font-mono); font-size: 0.63rem; color: var(--text-muted); text-align: center; padding: 0.1rem 0.3rem; border-radius: 3px;">models/user.py · set_password()</span>
+                </div>
+
+                <div style="color: var(--text-dim); font-size: 1.1rem; font-weight: bold; align-self: center; margin: 0 0.2rem;">➔</div>
+
+                <!-- Node 5: Decision -->
+                <div style="display: flex; align-items: center; gap: 0.6rem; align-self: center;">
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 0.3rem;">
+                        <div style="background: var(--bg-surface-3); border: 2px solid var(--accent); color: var(--accent); font-weight: 700; font-size: 0.7rem; width: 80px; height: 80px; transform: rotate(45deg); display: flex; align-items: center; justify-content: center;">
+                            <div style="transform: rotate(-45deg); text-align: center; line-height: 1.2;">compare<br>digest?</div>
+                        </div>
+                        <span style="font-family: var(--font-mono); font-size: 0.63rem; color: var(--text-muted); margin-top: 0.2rem;">password_sha256.py · L85</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+                        <div style="display: flex; align-items: center; gap: 0.4rem;">
+                            <span style="font-size: 0.68rem; font-weight: 700; color: #059669; font-family: var(--font-mono);">MATCH ➔</span>
+                            <div style="background: #A7F3D0; border: 2px solid #059669; color: #064E3B; font-weight: 700; font-size: 0.69rem; padding: 0.3rem 0.55rem; border-radius: 18px; white-space: nowrap;">Session created</div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.4rem;">
+                            <span style="font-size: 0.68rem; font-weight: 700; color: #DC2626; font-family: var(--font-mono);">FAIL ──➔</span>
+                            <div style="background: #FECACA; border: 2px solid #DC2626; color: #991B1B; font-weight: 700; font-size: 0.69rem; padding: 0.3rem 0.55rem; border-radius: 18px; white-space: nowrap;">Rate limiter +1 / 401</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+
+    <!-- DB INSPECTION GUIDE                                              -->
+    <div id="db-guide" class="card" style="border-top: 3px solid var(--accent); padding: 1.5rem; margin-bottom: 2rem;">
+        <div style="border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.75rem; margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+            <div>
+                <span style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Live Inspection</span>
+                <h2 style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin: 0.1rem 0 0;">How to Inspect the SQLite Database</h2>
+            </div>
+            <code style="font-size: 0.73rem; background: var(--bg-surface-3); border: 1px solid var(--border-default); padding: 0.2rem 0.55rem; border-radius: 4px;">instance/wallet.sqlite</code>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.5; margin-bottom: 1.1rem;">
+            Run these in your terminal from <code>D:\secure_wallet</code> - uses the project's Python, no extra tools needed.
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 0.85rem;">
+
+            <!-- Query 1 -->
+            <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 0.9rem;">
+                <div style="font-size: 0.82rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.4rem;">1. AES-256-GCM encrypted card blobs</div>
+                <div style="background: #17202A; color: #F8F9FA; padding: 0.55rem 0.8rem; border-radius: 4px; font-family: var(--font-mono); font-size: 0.76rem; overflow-x: auto; margin-bottom: 0.4rem;">
+                    cd D:\secure_wallet; .venv\Scripts\python.exe -c "import sqlite3; [print(r) for r in sqlite3.connect('instance/wallet.sqlite').execute('SELECT id, masked_identifier, substr(encrypted_metadata,1,40) FROM payment_methods')]"
+                </div>
+                <div style="font-size: 0.76rem; color: var(--success); font-family: var(--font-mono);">✓ Shows masked PAN + opaque Base64 ciphertext - no plaintext card data</div>
+            </div>
+
+            <!-- Query 2 -->
+            <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 0.9rem;">
+                <div style="font-size: 0.82rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.4rem;">2. Salted SHA-256 hashes (no plaintext passwords)</div>
+                <div style="background: #17202A; color: #F8F9FA; padding: 0.55rem 0.8rem; border-radius: 4px; font-family: var(--font-mono); font-size: 0.76rem; overflow-x: auto; margin-bottom: 0.4rem;">
+                    cd D:\secure_wallet; .venv\Scripts\python.exe -c "import sqlite3; [print(r) for r in sqlite3.connect('instance/wallet.sqlite').execute('SELECT username, substr(password_hash,1,20), substr(password_salt,1,20) FROM users')]"
+                </div>
+                <div style="font-size: 0.76rem; color: var(--success); font-family: var(--font-mono);">✓ Shows hex hash + hex salt - zero plaintext passwords</div>
+            </div>
+
+            <!-- Query 3 -->
+            <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 0.9rem;">
+                <div style="font-size: 0.82rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.4rem;">3. Integer paise balances (no floats)</div>
+                <div style="background: #17202A; color: #F8F9FA; padding: 0.55rem 0.8rem; border-radius: 4px; font-family: var(--font-mono); font-size: 0.76rem; overflow-x: auto; margin-bottom: 0.4rem;">
+                    cd D:\secure_wallet; .venv\Scripts\python.exe -c "import sqlite3; [print(r) for r in sqlite3.connect('instance/wallet.sqlite').execute('SELECT user_id, balance_cents, balance_cents/100.0 FROM wallets')]"
+                </div>
+                <div style="font-size: 0.76rem; color: var(--success); font-family: var(--font-mono);">✓ balance_cents is INTEGER - exact paise, no floating-point drift</div>
+            </div>
+
+        </div>
+
+        <div style="margin-top: 1rem; background: var(--info-bg); border: 1px solid var(--info-border); border-radius: 6px; padding: 0.8rem 1rem; font-size: 0.82rem; color: var(--info-text); display: flex; align-items: flex-start; gap: 0.5rem;">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; margin-top: 0.1rem;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            <div>Run <code>python scripts/verify_e2e_live.py</code> for a full 20-step automated audit that checks zero leakage of keys, hashes, or salts in all rendered HTML responses.</div>
+        </div>
+    </div>
+
+
+    <!-- Quick Reference Table -->
+    <div class="card" style="padding: 1.4rem;">
+        <h3 style="font-size: 1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.85rem;">Cryptographic Reference Summary</h3>
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.82rem;">
+                <thead>
+                    <tr style="background: var(--bg-surface-elevated); border-bottom: 1px solid var(--border-subtle); text-align: left;">
+                        <th style="padding: 0.5rem 0.7rem; color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase;">What</th>
+                        <th style="padding: 0.5rem 0.7rem; color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase;">Algorithm</th>
+                        <th style="padding: 0.5rem 0.7rem; color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase;">Params</th>
+                        <th style="padding: 0.5rem 0.7rem; color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase;">Code File</th>
+                        <th style="padding: 0.5rem 0.7rem; color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase;">DB Column</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="border-bottom: 1px solid var(--border-subtle);">
+                        <td style="padding: 0.55rem 0.7rem; font-weight: 600;">User Password</td>
+                        <td style="padding: 0.55rem 0.7rem; font-family: var(--font-mono);">Salted SHA-256</td>
+                        <td style="padding: 0.55rem 0.7rem;">256-bit salt</td>
+                        <td style="padding: 0.55rem 0.7rem; font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent);">password_sha256.py</td>
+                        <td style="padding: 0.55rem 0.7rem;"><code>users.password_hash</code></td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid var(--border-subtle);">
+                        <td style="padding: 0.55rem 0.7rem; font-weight: 600;">Card Metadata</td>
+                        <td style="padding: 0.55rem 0.7rem; font-family: var(--font-mono);">AES-256-GCM</td>
+                        <td style="padding: 0.55rem 0.7rem;">96-bit nonce / 128-bit tag</td>
+                        <td style="padding: 0.55rem 0.7rem; font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent);">crypto_aes_gcm.py</td>
+                        <td style="padding: 0.55rem 0.7rem;"><code>payment_methods.encrypted_metadata</code></td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid var(--border-subtle);">
+                        <td style="padding: 0.55rem 0.7rem; font-weight: 600;">Wallet Balances</td>
+                        <td style="padding: 0.55rem 0.7rem; font-family: var(--font-mono);">Integer Paise</td>
+                        <td style="padding: 0.55rem 0.7rem;">64-bit signed int</td>
+                        <td style="padding: 0.55rem 0.7rem; font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent);">money_integer_cents.py</td>
+                        <td style="padding: 0.55rem 0.7rem;"><code>wallets.balance_cents</code></td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid var(--border-subtle);">
+                        <td style="padding: 0.55rem 0.7rem; font-weight: 600;">Transfers</td>
+                        <td style="padding: 0.55rem 0.7rem; font-family: var(--font-mono);">Atomic commit</td>
+                        <td style="padding: 0.55rem 0.7rem;">Double-entry ±paise</td>
+                        <td style="padding: 0.55rem 0.7rem; font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent);">wallet_service.py</td>
+                        <td style="padding: 0.55rem 0.7rem;"><code>transactions.amount_cents</code></td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 0.55rem 0.7rem; font-weight: 600;">Master Key</td>
+                        <td style="padding: 0.55rem 0.7rem; font-family: var(--font-mono);">env / KMS</td>
+                        <td style="padding: 0.55rem 0.7rem;">256-bit (32 bytes)</td>
+                        <td style="padding: 0.55rem 0.7rem; font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent);">crypto_aes_gcm.py · L69</td>
+                        <td style="padding: 0.55rem 0.7rem; color: var(--text-muted);">App memory only - never stored</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
